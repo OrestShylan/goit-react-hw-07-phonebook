@@ -1,16 +1,23 @@
 import { useState } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
-import { addContact } from 'components/redux/phonebookSlice';
+// import { useDispatch, useSelector } from 'react-redux';
+// import { addContact } from 'components/redux/phonebookSlice';
 import css from './ContactForm.module.css';
-import { selectContacts } from 'components/redux/selectors';
+
+import {
+  useAddContactMutation,
+  useGetContactQuery,
+} from 'components/redux/contactSlice';
 
 export const ContactForm = () => {
   const [name, setName] = useState('');
   const [number, setNumber] = useState('');
-  const dispatch = useDispatch();
-  const contacts = useSelector(selectContacts);
+  // const dispatch = useDispatch();
+  // const contacts = useSelector(selectContacts);
 
-  const handleSubmit = evt => {
+  const { data: contacts } = useGetContactQuery();
+  const [addContact, { isLoading }] = useAddContactMutation();
+
+  const handleSubmit = async evt => {
     evt.preventDefault();
 
     const isExistContact = contacts.some(
@@ -19,11 +26,16 @@ export const ContactForm = () => {
     if (isExistContact) {
       alert(`${name} is already in contacts.`);
       return;
+    } else {
+      const isCreated = await addContact({
+        name: name,
+        phone: number,
+      });
+      if (isCreated) {
+        setName('');
+        setNumber('');
+      }
     }
-
-    dispatch(addContact({ name, number, id: Date.now() }));
-    setName('');
-    setNumber('');
   };
 
   return (
@@ -48,7 +60,9 @@ export const ContactForm = () => {
         value={number}
         onChange={evt => setNumber(evt.target.value)}
       />
-      <button type="submit">Add Contact</button>
+      <button disabled={isLoading} type="submit">
+        Add Contact
+      </button>
     </form>
   );
 };
